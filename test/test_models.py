@@ -28,11 +28,12 @@ if __name__ == '__main__':
     safeZoneModel : SafezoneModel = SafezoneModel()
     poseModel : PoseModel = PoseModel()
 
+    test_analyze_video(safeZoneModel)
     # test_object_detection(safeZoneModel)
     # test_pose(poseModel)
 
 
-    poseModel.stream_webcam()
+    # poseModel.stream_webcam()
 
 
 
