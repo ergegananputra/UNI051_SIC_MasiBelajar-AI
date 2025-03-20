@@ -40,11 +40,8 @@ def process_video(video_path, output_path):
         x = st.sidebar.slider(f"Poin {i+1} - Posisi X", 0, frame_width, default_points[i][0], key=f"x{i}")
         y = st.sidebar.slider(f"Poin {i+1} - Posisi Y", 0, frame_height, default_points[i][1], key=f"y{i}")
         points.append([x, y])
+    print("koordinat",points)
 
-        if [x, y] != previous_points[i]:
-            print(f"Point {i+1}: {[x, y]}")
-            previous_points[i] = [x, y] 
-    
     while cap.isOpened():
         ret, frame = cap.read()
         if not ret:
