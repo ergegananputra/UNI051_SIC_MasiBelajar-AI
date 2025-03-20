@@ -20,18 +20,31 @@ def process_video(video_path, output_path):
     fourcc = cv2.VideoWriter_fourcc(*"mp4v")
     out = cv2.VideoWriter(output_path, fourcc, fps, (frame_width, frame_height))
 
-    default_points = [[100, 100], [300, 100], [300, 300], [100, 300]]
+    default_points = [
+        [frame_width // 4, frame_height // 4],
+        [3 * frame_width // 4, frame_height // 4],
+        [frame_width - 50, frame_height // 2],
+        [3 * frame_width // 4, 3 * frame_height // 4], 
+        [frame_width // 4, 3 * frame_height // 4],
+        [50, frame_height // 2] 
+    ]
 
     frame_placeholder = st.empty()
 
     st.sidebar.subheader("🎯 Atur Bounding Box")
 
+    previous_points = default_points.copy()
     points = []
-    for i in range(4):
+    
+    for i in range(6):
         x = st.sidebar.slider(f"Poin {i+1} - Posisi X", 0, frame_width, default_points[i][0], key=f"x{i}")
         y = st.sidebar.slider(f"Poin {i+1} - Posisi Y", 0, frame_height, default_points[i][1], key=f"y{i}")
         points.append([x, y])
 
+        if [x, y] != previous_points[i]:
+            print(f"Point {i+1}: {[x, y]}")
+            previous_points[i] = [x, y] 
+    
     while cap.isOpened():
         ret, frame = cap.read()
         if not ret:
@@ -52,10 +65,8 @@ def process_video(video_path, output_path):
     cap.release()
     out.release()
 
-
 st.title("AI Video Processing")
 
-# Upload video
 video_file = st.file_uploader("Upload video", type=["mp4", "avi", "mov"])
 
 if video_file:
