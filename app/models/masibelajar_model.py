@@ -1,8 +1,11 @@
-from typing import List
 import cv2
 import numpy as np
 from shapely import Polygon
 from ultralytics import YOLO
+from pathlib import Path
+from typing import List, Union
+from PIL import Image
+from datetime import datetime
 
 RED = (0, 0, 255)
 GREEN = (0, 255, 0)
@@ -56,7 +59,7 @@ class MasiBelajarModel:
             return intersection_area / bbox_area
         
     
-    def check_falling_pose(self, keypoints):
+    def check_falling_pose(self, keypoints) -> bool:
         """
         Check if a person is in a falling pose based on keypoints.
     
@@ -78,7 +81,7 @@ class MasiBelajarModel:
             "lower_body" : np.average(keypoints[10:, 1]),
         }
 
-        return score["upper_body"] > score["lower_body"]
+        return bool(score["upper_body"] > score["lower_body"])
     
     def match_keypoints_to_bboxes(self, keypoints, bboxes):
         """
@@ -106,7 +109,7 @@ class MasiBelajarModel:
 
 
     def analyze_frame(self, 
-                  inference_path: str, 
+                  inference_path: Union[str, Path, int, Image.Image, list, tuple, np.ndarray], 
                   safezone_points: List, 
                   target_class: List[str] = ['toddler', 'non-toddler'],
                   preview: bool = False,
@@ -231,9 +234,16 @@ class MasiBelajarModel:
                         # Draw safezone polygon
                         cv2.polylines(frame, [safezone_points.astype(np.int32)], isClosed=True, color=color, thickness=2)
 
+            # Count each label
+            label_counts = {}
+            for label in target_class:
+                label_counts[label] = sum(label in labels[int(pred_classes[i])] for i in range(len(pred_classes)))
+
             yield ({
-                "is_person_fall": is_person_fall,
-                "is_person_out_of_safezone": is_person_out_of_safezone,
+                "fall": is_person_fall,
+                "out_of_safezone": is_person_out_of_safezone,
+                "counts": label_counts,
+                "timestamp": datetime.now().strftime("%Y-%m-%d %H:%M:%S"),
             }, frame)
                 
 
