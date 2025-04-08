@@ -36,7 +36,31 @@ def test_analyze_pose_video(model : PoseModel, image_path: str):
 @show_func_name
 def test_masibelajar_model(image_path: str, safezone: list):
     model = MasiBelajarModel(
-        od_weight='app/models/object_detection/config/weight.pt',
+        od_weight='app/models/object_detection/config/best.pt',
+        pose_weight='app/models/key_points/config/yolo11m-pose.pt',
+        tracker='app/models/tracker/tracker.yaml',
+    )
+
+
+    for summary, frame in model.analyze_frame(
+        inference_path=image_path, 
+        preview=True, 
+        safezone_points=safezone,
+        stream=True,
+        verbose=False,
+        track=True,
+        ):
+
+        cv2.imshow("Frame", frame)
+        print(summary)
+        if cv2.waitKey(1) & 0xFF == ord('q'):
+            break
+
+
+@show_func_name
+def test_masibelajar_model_2(image_path: str, safezone: list):
+    model = MasiBelajarModel(
+        od_weight='app/models/object_detection/config/best.pt',
         pose_weight='app/models/key_points/config/yolo11m-pose.pt',
         tracker='app/models/tracker/tracker.yaml',
     )
@@ -50,25 +74,43 @@ def test_masibelajar_model(image_path: str, safezone: list):
 
     reference_vector_tracker = direction_vector
 
-    for _, frame in model.analyze_frame(
-        inference_path=image_path, 
-        preview=True, 
-        safezone_points=safezone,
-        stream=True,
-        verbose=False,
-        track=True,
-        reference_vector_tracker=reference_vector_tracker
-        ):
-  
-        cv2.arrowedLine(frame, point_1, point_2, (0, 255, 0), 1, line_type=cv2.LINE_8, shift=0, tipLength=0.1)
+    # cap = cv2.VideoCapture(0)
+    cap = cv2.VideoCapture(image_path)
 
-        cv2.imshow("Frame", frame)
+    if not cap.isOpened():
+        print("Error: Could not open webcam.")
+        exit()
+
+    while cap.isOpened():
+        ret, img = cap.read()
+        if not ret:
+            print("Error: Could not read frame.")
+            break
+
+        for summary, frame in model.analyze_frame(
+            inference_path=img, 
+            preview=True, 
+            safezone_points=safezone,
+            stream=True,
+            verbose=False,
+            track=True,
+            reference_vector_tracker=reference_vector_tracker
+            ):
+
+            cv2.imshow("Frame", frame)
+            print(summary)
+            if cv2.waitKey(1) & 0xFF == ord('q'):
+                break
+
         if cv2.waitKey(1) & 0xFF == ord('q'):
             break
 
+    cap.release()
+    cv2.destroyAllWindows()
+
 @show_func_name
 def test_tracking(img: str):
-    model = YOLO('app/models/object_detection/config/weight.pt')
+    model = YOLO('app/models/object_detection/config/best.pt')
     track_history = defaultdict(lambda: [])
     for result in model.track(
         img, 
@@ -104,17 +146,19 @@ def test_tracking(img: str):
             break
 
 if __name__ == '__main__':
-    safezone = [
-        (277, 142),
-        (299, 149),
-        (454, 140),
-        (449, 219),
-        (301, 244),
-        (277, 225)
-    ]
+    # safezone = [
+    #     (277, 142),
+    #     (299, 149),
+    #     (454, 140),
+    #     (449, 219),
+    #     (301, 244),
+    #     (277, 225)
+    # ]
+    safezone = [[442,30], [496, 33], [488,201], [437, 205]]
 
     image_path = 'test/data/Fall.mp4'
     image_path = 'test/data/TikTokToddler.mp4'
+    # image_path = 'https://www.youtube.com/live/yNKvkPJl-tg?feature=shared'
 
     safeZoneModel : SafezoneModel = SafezoneModel()
     poseModel : PoseModel = PoseModel()
@@ -125,9 +169,10 @@ if __name__ == '__main__':
     # test_analyze_pose_video(poseModel, image_path)
 
 
-    test_masibelajar_model(image_path, safezone)
+    # test_masibelajar_model(image_path, safezone)
+    # test_masibelajar_model_2(image_path, safezone)
 
-    # test_tracking(image_path)
+    test_tracking(image_path)
 
 
     # poseModel.stream_webcam()

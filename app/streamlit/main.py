@@ -7,7 +7,7 @@ from app.models import  MasiBelajarModel
 
 # Initialize the SafezoneModel
 masibelajar_model = MasiBelajarModel(
-    od_weight='app/models/object_detection/config/weight.pt',
+    od_weight='app/models/object_detection/config/best.pt',
     pose_weight='app/models/key_points/config/yolo11m-pose.pt',
     tracker='app/models/tracker/tracker.yaml',
 )
@@ -165,7 +165,8 @@ if video_file:
             target_class=selected_classes,
             preview=True,
             stream=True,
-            verbose=False,
+            verbose=True,
+            track=True,
         ):
             pts = np.array(st.session_state.points, dtype=np.int32)
             cv2.polylines(frame, [pts], isClosed=True, color=(0, 255, 0), thickness=2)

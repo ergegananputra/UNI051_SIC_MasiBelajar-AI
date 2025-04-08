@@ -34,7 +34,6 @@ class MasiBelajarModel:
                   preview: bool = False,
                   stream: bool = False,
                   track: bool = False,
-                  reference_vector_tracker: np.ndarray = None,
                   verbose: bool = False):
         """Analyze a video frame by frame and check if a person is falling or out of the safezone.
         This function uses the object detection model to detect people and the pose estimation model to check their poses.
@@ -52,12 +51,10 @@ class MasiBelajarModel:
         Yields:
             _type_: A tuple containing a dictionary with the results and the frame with overlays if preview is True.
         """
-        if track and reference_vector_tracker is None:
-            raise ValueError("Reference vector tracker is required when track is True.")
 
         safezone_points = np.array(safezone_points)
 
-        for od_result in self.od_model.track(inference_path, stream=stream, verbose=verbose, persist=True):
+        for od_result in self.od_model.track(inference_path, stream=stream, verbose=verbose, persist=True, tracker='app/models/tracker/tracker.yaml'):
             # Object detection results
             bboxes = od_result.boxes.xyxy.cpu().numpy()
             confidences = od_result.boxes.conf.cpu().numpy()
@@ -81,7 +78,7 @@ class MasiBelajarModel:
             matched_keypoints = self.__match_keypoints_to_bboxes(keypoints_results, bboxes)
 
             is_person_fall = False
-            is_person_out_of_safezone = False
+            is_outside = False
 
             if preview:
                 frame = od_result.plot(
@@ -108,7 +105,7 @@ class MasiBelajarModel:
                     target_bbox = Polygon([(x_min, y_min), (x_max, y_min), (x_max, y_max), (x_min, y_max)])
                     intersection_percentage = self.__calculate_safezone_intersection_percentage(target_bbox, safezone)
 
-                    is_person_out_of_safezone = intersection_percentage < 0.5
+                    is_outside = intersection_percentage < 0.5
 
                     # Check for falling pose
                     keypoints = matched_keypoints[i]
@@ -116,7 +113,7 @@ class MasiBelajarModel:
                         is_person_fall = self.__check_falling_pose(keypoints)
 
                     # Tracker
-                    if track and track_ids is not None and track_boxes is not None:
+                    if track and (track_ids is not None and track_boxes is not None):
                         x, y, w, h = track_boxes[i]
                         self.__update_tracker(
                             id=int(track_ids[i]), 
@@ -125,14 +122,10 @@ class MasiBelajarModel:
                             height=h
                             )
                         
-                        is_flow_in = self.__check_vector_direction(
-                            id=int(track_ids[i]), 
-                            reference_vector=reference_vector_tracker
-                            )
                         
-                        self.__update_flow_in(
+                        self.__update_inside(
                             id=int(track_ids[i]), 
-                            value=is_flow_in
+                            value=not is_outside
                             )
 
 
@@ -140,27 +133,43 @@ class MasiBelajarModel:
                         self.__draw_visuals(
                             safezone_points=safezone_points, 
                             is_person_fall=is_person_fall, 
-                            is_person_out_of_safezone=is_person_out_of_safezone, 
+                            is_person_out_of_safezone=is_outside, 
                             frame=frame, 
                             x_min=x_min, 
                             y_min=y_min, 
                             x_max=x_max, 
                             label=label, 
                             intersection_percentage=intersection_percentage,
-                            track=track,
-                            tracks_ids=track_ids if track else None,
-                            tracks_boxes=track_boxes if track else None,
+                            track=track and track_ids is not None,
+                            tracks_ids=track_ids,
+                            tracks_boxes=track_boxes,
                             )
 
             # Count each label
+            oldest_person = None
             label_counts = {}
             for label in target_class:
                 label_counts[label] = sum(label in labels[int(pred_classes[i])] for i in range(len(pred_classes)))
 
+            if track:
+                # count self.tracker_history that still inside
+                label_counts["inside"] = sum(1 for track_data in self.tracker_history.values() if track_data["inside"])
+
+                # Get the person that have oldest last_seen_inside and still inside
+                person_inside_tracks =  {key: value for key, value in self.tracker_history.items() if value["inside"] }
+                if person_inside_tracks:
+                    oldest_person = min(person_inside_tracks.items(), key=lambda x: x[1]["last_seen_inside"])[0]
+                    oldest_person = self.tracker_history[oldest_person]["last_seen_inside"] if oldest_person is not None else None
+
+                    # Current time - oldest_person
+                    oldest_person = (datetime.now() - oldest_person).total_seconds() if oldest_person is not None else None
+
+
             yield ({
                 "fall": is_person_fall,
-                "out_of_safezone": is_person_out_of_safezone,
+                "out_of_safezone": is_outside,
                 "counts": label_counts,
+                "longest_inside": oldest_person,
                 "timestamp": datetime.now().strftime("%Y-%m-%d %H:%M:%S"),
             }, frame)
 
@@ -192,13 +201,12 @@ class MasiBelajarModel:
     
     def __setup_tracker(self):
         self.tracker_history = defaultdict(lambda: {
-            "entry_time": None,
-            "last_seen": None,
             "previous_position": None,
             "current_position": None,
             "width": None,
             "height": None,
-            "flow_in": False,
+            "inside": False,
+            "last_seen_inside": None,
             "history": []
         })
 
@@ -209,7 +217,6 @@ class MasiBelajarModel:
             self.tracker_history[id]["current_position"] = position
             self.tracker_history[id]["width"] = width
             self.tracker_history[id]["height"] = height
-            self.tracker_history[id]["last_seen"] = datetime.now()
         else:
             # Extract positions from tracker history
             data = [
@@ -237,13 +244,12 @@ class MasiBelajarModel:
                     original_id = track_ids[nearest_index]
     
                     self.tracker_history[id] = {
-                        "entry_time": self.tracker_history[original_id]["entry_time"],
-                        "last_seen": datetime.now(),
                         "previous_position": self.tracker_history[original_id]["current_position"],
                         "current_position": position,
                         "width": width,
                         "height": height,
-                        "flow_in":  self.tracker_history[original_id]["flow_in"],
+                        "inside":  self.tracker_history[original_id]["inside"],
+                        "last_seen_inside": self.tracker_history[original_id]["last_seen_inside"],
                         "history": self.tracker_history[original_id]["history"]
                     }
 
@@ -253,39 +259,20 @@ class MasiBelajarModel:
     
             # If no match is found, create a new track
             self.tracker_history[id] = {
-                "entry_time": datetime.now(),
-                "last_seen": datetime.now(),
                 "previous_position": None,
                 "current_position": position,
                 "width": width,
                 "height": height,
-                "flow_in": False,
+                "inside": False,
+                "last_seen_inside": None,
                 "history": []
             }
-
-    def __check_vector_direction(self, id, reference_vector):
-        if id in self.tracker_history:
-            current_position = self.tracker_history[id]["current_position"]
-            previous_position = self.tracker_history[id]["previous_position"]
-
-            if current_position is not None and previous_position is not None:
-                vector = np.array(current_position) - np.array(previous_position)
-                distance = np.linalg.norm(vector)
-
-                if distance > 0:
-                    direction_vector = vector / distance
-
-                    dot_product = np.dot(direction_vector, reference_vector)
-
-                    return dot_product > 0
-                elif distance == 0:
-                    return self.tracker_history[id]["flow_in"]
-
-        return False
     
-    def __update_flow_in(self, id, value: bool):
+    def __update_inside(self, id, value: bool):
         if id in self.tracker_history:
-            self.tracker_history[id]["flow_in"] = value
+            self.tracker_history[id]["inside"] = value
+            if self.tracker_history[id]["inside"]:
+                self.tracker_history[id]["last_seen_inside"] = datetime.now()
         else:
             raise ValueError(f"ID {id} not found in tracker history.")
 
@@ -407,7 +394,7 @@ class MasiBelajarModel:
                 for box, track_id in zip(tracks_boxes, tracks_ids):
                     x, y, _, _ = box
                     tracker = self.tracker_history[track_id]
-                    if tracker["flow_in"]:
+                    if tracker["inside"]:
                         color = GREEN
                     else:
                         color = RED
