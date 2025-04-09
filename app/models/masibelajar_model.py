@@ -54,7 +54,14 @@ class MasiBelajarModel:
 
         safezone_points = np.array(safezone_points)
 
-        for od_result in self.od_model.track(inference_path, stream=stream, verbose=verbose, persist=True, tracker='app/models/tracker/tracker.yaml'):
+        for od_result in self.od_model.track(
+                inference_path, 
+                stream=stream, 
+                verbose=verbose,
+                persist=True,
+                conf=0.65, 
+                tracker='app/models/tracker/tracker.yaml'
+                ):
             # Object detection results
             bboxes = od_result.boxes.xyxy.cpu().numpy()
             confidences = od_result.boxes.conf.cpu().numpy()
@@ -376,14 +383,14 @@ class MasiBelajarModel:
         color = RED if is_person_out_of_safezone or is_person_fall else GREEN
         label_text = f"{(intersection_percentage * 100):.2f}%"
         cv2.putText(
-                            img=frame,
-                            text=label_text,
-                            org=(int(x_min), int(y_min) - 10),
-                            fontFace=cv2.FONT_HERSHEY_SIMPLEX,
-                            fontScale=0.5,
-                            color=color,
-                            thickness=1
-                        )
+                img=frame,
+                text=label_text,
+                org=(int(x_min), int(y_min) - 10),
+                fontFace=cv2.FONT_HERSHEY_SIMPLEX,
+                fontScale=0.5,
+                color=color,
+                thickness=1
+            )
 
         # Draw safezone polygon
         cv2.polylines(frame, [safezone_points.astype(np.int32)], isClosed=True, color=color, thickness=2)

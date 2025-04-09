@@ -52,7 +52,6 @@ def test_masibelajar_model(image_path: str, safezone: list):
         ):
 
         cv2.imshow("Frame", frame)
-        print(summary)
         if cv2.waitKey(1) & 0xFF == ord('q'):
             break
 
@@ -75,7 +74,8 @@ def test_masibelajar_model_2(image_path: str, safezone: list):
     reference_vector_tracker = direction_vector
 
     # cap = cv2.VideoCapture(0)
-    cap = cv2.VideoCapture(image_path)
+    # cap = cv2.VideoCapture(image_path)
+    cap = cv2.VideoCapture("http://192.168.122.82:81/stream")
 
     if not cap.isOpened():
         print("Error: Could not open webcam.")
@@ -94,11 +94,9 @@ def test_masibelajar_model_2(image_path: str, safezone: list):
             stream=True,
             verbose=False,
             track=True,
-            reference_vector_tracker=reference_vector_tracker
             ):
 
             cv2.imshow("Frame", frame)
-            print(summary)
             if cv2.waitKey(1) & 0xFF == ord('q'):
                 break
 
@@ -154,11 +152,16 @@ if __name__ == '__main__':
     #     (301, 244),
     #     (277, 225)
     # ]
-    safezone = [[442,30], [496, 33], [488,201], [437, 205]]
+    # safezone = [[442,30], [496, 33], [488,201], [437, 205]]
+    # safezone = [[319, 49], [478, 114], [479, 328], [328, 407]] # Scena 1
+    safezone = [[540, 153], [675, 190], [665, 530], [532, 561]] # Scena 1
 
     image_path = 'test/data/Fall.mp4'
     image_path = 'test/data/TikTokToddler.mp4'
     # image_path = 'https://www.youtube.com/live/yNKvkPJl-tg?feature=shared'
+    # image_path = '/mnt/d/UGM/EDU/SamsungInnovationCampus/Dataset/Scena1.mp4'
+    image_path = '/mnt/d/UGM/EDU/SamsungInnovationCampus/Dataset/Scena2.mp4'
+    image_path = 'http://192.168.122.82:81/stream'
 
     safeZoneModel : SafezoneModel = SafezoneModel()
     poseModel : PoseModel = PoseModel()
@@ -169,10 +172,10 @@ if __name__ == '__main__':
     # test_analyze_pose_video(poseModel, image_path)
 
 
-    # test_masibelajar_model(image_path, safezone)
+    test_masibelajar_model(image_path, safezone)
     # test_masibelajar_model_2(image_path, safezone)
 
-    test_tracking(image_path)
+    # test_tracking(image_path)
 
 
     # poseModel.stream_webcam()

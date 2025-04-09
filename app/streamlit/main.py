@@ -19,29 +19,48 @@ st.set_page_config(
     initial_sidebar_state="collapsed"  # Collapse the sidebar by default
 )
 
-st.title("🎥 AI Video Processing with Safezone Detection")
+st.title("🎥 Lokari")
 
-# Add a custom header and description for the file uploader
+# Add a custom header and description
 st.markdown(
     """
-    ## 📂 Upload Your Video
-    Drag and drop your video file here or click to browse. Supported formats: **MP4, AVI, MOV**.
+    ## 📂 Upload Your Video or Enter a Stream URL
+    - Drag and drop your video file here or click to browse. Supported formats: **MP4, AVI, MOV**.
+    - Alternatively, enter a **stream URL** (e.g., RTSP or HTTP) to process a live video stream.
     """
 )
 
-# File uploader with drag-and-drop functionality
-video_file = st.file_uploader(
-    label="Upload video",
-    type=["mp4", "avi", "mov"],
-    label_visibility="collapsed"  # Hide the default label
-)
+# Add a tab layout for "File Upload" and "Stream URL"
+tab1, tab2 = st.tabs(["📂 File Upload", "🌐 Stream URL"])
 
-if video_file:
-    temp_video = tempfile.NamedTemporaryFile(delete=False, suffix=".mp4")
-    temp_video.write(video_file.read())
+# File Upload Tab
+with tab1:
+    video_file = st.file_uploader(
+        label="Upload video",
+        type=["mp4", "avi", "mov"],
+        label_visibility="collapsed"
+    )
+
+# Stream URL Tab
+with tab2:
+    stream_url = st.text_input(
+        label="Enter Stream URL",
+        placeholder="e.g., rtsp://username:password@ip_address:port/stream",
+    )
+
+# Process the video or stream
+if video_file or stream_url:
+    if video_file:
+        # Save the uploaded video to a temporary file
+        temp_video = tempfile.NamedTemporaryFile(delete=False, suffix=".mp4")
+        temp_video.write(video_file.read())
+        video_source = temp_video.name
+    else:
+        # Use the stream URL as the video source
+        video_source = stream_url
 
     # Get video dimensions for default safezone points
-    cap = cv2.VideoCapture(temp_video.name)
+    cap = cv2.VideoCapture(video_source)
     if not cap.isOpened():
         st.error("❌ Error: Unable to open the video file.")
     else:
@@ -160,7 +179,7 @@ if video_file:
         st.write("⏳ Processing video...")
 
         for result, frame in masibelajar_model.analyze_frame(
-            inference_path=temp_video.name,
+            inference_path=video_source,
             safezone_points=st.session_state.points,
             target_class=selected_classes,
             preview=True,
