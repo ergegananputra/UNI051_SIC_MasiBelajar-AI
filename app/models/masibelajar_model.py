@@ -43,6 +43,8 @@ class MasiBelajarModel:
     def analyze_frame(self, 
                   inference_path: Union[str, Path, int, Image.Image, list, tuple, np.ndarray], 
                   safezone_points: List, 
+                  time_threshold: int = 3600,
+                  id : str = "MasiBelajar",
                   target_class: List[str] = ['toddler', 'non-toddler'],
                   preview: bool = False,
                   stream: bool = False,
@@ -171,8 +173,13 @@ class MasiBelajarModel:
             # Count each label
             oldest_person = None
             label_counts = {}
+            __temp_payload = {
+                "id" : id
+            }
+
             for label in target_class:
                 label_counts[label] = sum(label in labels[int(pred_classes[i])] for i in range(len(pred_classes)))
+
 
             if track:
                 # count self.tracker_history that still inside
@@ -187,11 +194,17 @@ class MasiBelajarModel:
                     # Current time - oldest_person
                     oldest_person = (datetime.now() - oldest_person).total_seconds() if oldest_person is not None else None
 
+                    __temp_payload = {
+                        "longest_inside": oldest_person,
+                        "is_there_something_wrong": oldest_person > time_threshold,
+                    }
+
+                    
             _payloads = {
                 "fall": is_person_fall,
                 "out_of_safezone": is_outside,
                 "counts": label_counts,
-                "longest_inside": oldest_person,
+                **__temp_payload
             }
 
             yield ({
@@ -206,7 +219,11 @@ class MasiBelajarModel:
                 del payloads["counts"]
                 payloads["count_toddler"] = __count["toddler"]
                 payloads["count_adult"] = __count["non-toddler"]
+                payloads["inside"] = __count["inside"]
                 del __count
+
+                # print(payloads)
+                # raise ValueError("Error")
 
                 self.executor.submit(self.__push_to_ubidots, payloads)
                 payloads = _payloads

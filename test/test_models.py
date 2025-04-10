@@ -49,6 +49,7 @@ def test_masibelajar_model(image_path: str, safezone: list):
         stream=True,
         verbose=False,
         track=True,
+        time_threshold=5
         ):
 
         cv2.imshow("Frame", frame)
@@ -154,13 +155,14 @@ if __name__ == '__main__':
     # ]
     # safezone = [[442,30], [496, 33], [488,201], [437, 205]]
     # safezone = [[319, 49], [478, 114], [479, 328], [328, 407]] # Scena 1
-    safezone = [[540, 153], [675, 190], [665, 530], [532, 561]] # Scena 1
+    safezone = [[696, 210], [1200, 130], [1166, 716], [1009, 718], [705, 567]] # Scena 1
 
     image_path = 'test/data/Fall.mp4'
     image_path = 'test/data/TikTokToddler.mp4'
     # image_path = 'https://www.youtube.com/live/yNKvkPJl-tg?feature=shared'
     # image_path = '/mnt/d/UGM/EDU/SamsungInnovationCampus/Dataset/Scena1.mp4'
-    image_path = '/mnt/d/UGM/EDU/SamsungInnovationCampus/Dataset/Scena2.mp4'
+    # image_path = '/mnt/d/UGM/EDU/SamsungInnovationCampus/Dataset/Scena2.mp4'
+    image_path = '/mnt/d/UGM/EDU/SamsungInnovationCampus/Dataset/Stream.mp4'
     # image_path = 'http://192.168.122.82:81/stream'
 
     safeZoneModel : SafezoneModel = SafezoneModel()
