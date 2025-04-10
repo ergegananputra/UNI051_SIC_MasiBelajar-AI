@@ -5,6 +5,27 @@ import tempfile
 import os
 from app.models import  MasiBelajarModel
 
+
+@st.dialog("⚠️Anomaly Detected⚠️")
+def anomaly_detected():
+    """anomaly detected
+
+    raise a dialog if there a person detected inside and more than time threshold
+    """
+
+    st.write("Anomaly Detected")
+    st.write("A person has been detected inside the safezone for more than the specified time threshold.")
+    st.write("Please take appropriate action.")
+
+    # Add a button to close the dialog
+    if st.button("Close"):
+        st.session_state.anomaly_detected = False
+        st.session_state.points = []
+        st.session_state.num_points = 0
+
+if "anomaly_detected" not in st.session_state:
+    st.session_state.anomaly_detected = False
+
 # Initialize the SafezoneModel
 masibelajar_model = MasiBelajarModel(
     od_weight='app/models/object_detection/config/best.pt',
@@ -124,6 +145,16 @@ if video_file or stream_url:
             except Exception as e:
                 st.error(f"❌ Invalid points format. Please enter a list of [x, y] pairs. {e}")
                 num_points_textfield = len(st.session_state.points)  # Reset to the default number of points
+            
+            # Time threshold for inside
+            time_threshold = st.number_input(
+                "Time Threshold (seconds)",
+                min_value=1,
+                max_value=60,
+                value=5,  # Default value
+                step=1,
+                key="time_threshold"
+            )
 
             def update_points():
                 # Update the session state with the new number of points
@@ -148,6 +179,8 @@ if video_file or stream_url:
                 key="num_points",
                 on_change=lambda: update_points()  # Update points when the number changes
             )
+
+            
 
             # Display number inputs for each point
             st.markdown("### Adjust Points")
@@ -210,7 +243,23 @@ if video_file or stream_url:
                 col1, col2, col3 = st.columns(3, border=True)
                 col1.metric(label="Fall", value=result.get("fall"))
                 col2.metric(label="Out of  Safezone", value=result.get("out_of_safezone"))
-                col3.metric(label="Longest Inside", value=result.get("longest_inside"))
+                
+                # Check if `longest_inside` exceeds the `time_threshold`
+                longest_inside = result.get("longest_inside", 0) or 0
+                is_there_something_wrong = longest_inside > time_threshold
+
+
+                # Display a switch (checkbox) for the status
+                col3.metric(
+                    label="⚠️ Something Wrong",
+                    value=is_there_something_wrong,
+                )
+
+                if is_there_something_wrong and not st.session_state.anomaly_detected:
+                    st.session_state.anomaly_detected = True
+                    anomaly_detected()
+                elif not is_there_something_wrong:
+                    st.session_state.anomaly_detected = False
 
                 st.write("Counts")
                 col4, col5, col6 = st.columns(3, border=True)
