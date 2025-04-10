@@ -205,7 +205,21 @@ if video_file or stream_url:
                     1
                 )
 
-            message_placeholder.json(result)
+            with message_placeholder.container():
+                st.write("Status")
+                col1, col2, col3 = st.columns(3, border=True)
+                col1.metric(label="Fall", value=result.get("fall"))
+                col2.metric(label="Out of  Safezone", value=result.get("out_of_safezone"))
+                col3.metric(label="Longest Inside", value=result.get("longest_inside"))
+
+                st.write("Counts")
+                col4, col5, col6 = st.columns(3, border=True)
+                col4.metric(label="Toddler", value=result.get("counts").get("toddler"))
+                col5.metric(label="Non-toddler", value=result.get("counts").get("non-toddler"))
+                col6.metric(label="Inside", value=result.get("counts").get("inside"))
+
+                st.write("JSON")
+                st.json(result)
 
             frame_placeholder.image(
                 frame, 
