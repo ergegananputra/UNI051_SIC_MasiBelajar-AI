@@ -1,6 +1,8 @@
 from collections import defaultdict
+from concurrent.futures import ThreadPoolExecutor
 import cv2
 import numpy as np
+import requests
 from shapely import Polygon
 from ultralytics import YOLO
 from pathlib import Path
@@ -13,6 +15,10 @@ GREEN = (0, 255, 0)
 BLUE = (255, 0, 0)
 YELLOW = (0, 255, 255)
 
+# UBIDOTS
+DEVICE_ID = "m-security"
+UBIDOTS_TOKEN = "BBUS-kiWazp9NWTu1392oaOpNPKF6YzaDJW"
+
 class MasiBelajarModel:
     def __init__(self, od_weight : str, pose_weight : str, tracker: str):
         self.od_weight = od_weight
@@ -24,6 +30,13 @@ class MasiBelajarModel:
 
         self.__load_icons()
         self.__setup_tracker()
+
+        # Thread Pool Executor
+        self.executor = ThreadPoolExecutor(max_workers=2)
+
+    def __del__(self):
+        # Shutdown the ThreadPoolExecutor
+        self.executor.shutdown(wait=True)
         
 
 
@@ -53,6 +66,9 @@ class MasiBelajarModel:
         """
 
         safezone_points = np.array(safezone_points)
+
+        payloads = None 
+        _payloads = None
 
         for od_result in self.od_model.track(
                 inference_path, 
@@ -171,14 +187,41 @@ class MasiBelajarModel:
                     # Current time - oldest_person
                     oldest_person = (datetime.now() - oldest_person).total_seconds() if oldest_person is not None else None
 
-
-            yield ({
+            _payloads = {
                 "fall": is_person_fall,
                 "out_of_safezone": is_outside,
                 "counts": label_counts,
                 "longest_inside": oldest_person,
+            }
+
+            yield ({
                 "timestamp": datetime.now().strftime("%Y-%m-%d %H:%M:%S"),
-            }, frame)
+            }.update(_payloads), frame)
+
+            if payloads != _payloads:
+                payloads = _payloads
+
+                payloads["timestamp"] = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
+                __count = payloads["counts"]
+                del payloads["counts"]
+                payloads["count_toddler"] = __count["toddler"]
+                payloads["count_adult"] = __count["non-toddler"]
+                del __count
+
+                self.executor.submit(self.__push_to_ubidots, payloads)
+                payloads = _payloads
+
+    def __push_to_ubidots(self, payloads: dict):
+        url = "http://industrial.api.ubidots.com/api/v1.6/devices/" + DEVICE_ID
+    
+        headers = {"Content-Type": "application/json", "X-Auth-Token": UBIDOTS_TOKEN}
+        
+        try:
+            response = requests.post(url, json=payloads, headers=headers)
+            response.raise_for_status()
+        except Exception as e:
+            pass
+
 
     def __load_icons(self):
         self.icons = {
@@ -423,14 +466,3 @@ class MasiBelajarModel:
                     )
             except Exception as e:
                 print(f"Error in drawing track: {e}")
-                
-
-
-
-
-
-
-
-
-
-        
