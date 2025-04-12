@@ -150,8 +150,7 @@ if video_file or stream_url:
             time_threshold = st.number_input(
                 "Time Threshold (seconds)",
                 min_value=1,
-                max_value=60,
-                value=5,  # Default value
+                value=3600,  # Default value
                 step=1,
                 key="time_threshold"
             )
@@ -217,7 +216,7 @@ if video_file or stream_url:
             target_class=selected_classes,
             preview=True,
             stream=True,
-            verbose=True,
+            verbose=False,
             track=True,
         ):
             pts = np.array(st.session_state.points, dtype=np.int32)
