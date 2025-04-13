@@ -49,6 +49,7 @@ class MasiBelajarModel:
                   preview: bool = False,
                   stream: bool = False,
                   track: bool = False,
+                  push_ubidots: bool = False,
                   verbose: bool = False):
         """Analyze a video frame by frame and check if a person is falling or out of the safezone.
         This function uses the object detection model to detect people and the pose estimation model to check their poses.
@@ -209,9 +210,10 @@ class MasiBelajarModel:
 
             yield ({
                 "timestamp": datetime.now().strftime("%Y-%m-%d %H:%M:%S"),
-            }.update(_payloads), frame)
+                **_payloads,
+            }, frame)
 
-            if payloads != _payloads:
+            if payloads != _payloads and push_ubidots:
                 payloads = _payloads
 
                 payloads["timestamp"] = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
@@ -222,8 +224,6 @@ class MasiBelajarModel:
                 payloads["inside"] = __count["inside"]
                 del __count
 
-                # print(payloads)
-                # raise ValueError("Error")
 
                 self.executor.submit(self.__push_to_ubidots, payloads)
                 payloads = _payloads
