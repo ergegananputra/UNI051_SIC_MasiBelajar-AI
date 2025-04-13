@@ -155,9 +155,10 @@ if __name__ == '__main__':
     image_path = 'test/data/TikTokToddler.mp4'
     # image_path = 'https://www.youtube.com/live/yNKvkPJl-tg?feature=shared'
     # image_path = '/mnt/d/UGM/EDU/SamsungInnovationCampus/Dataset/Scena1.mp4'
-    # image_path = '/mnt/d/UGM/EDU/SamsungInnovationCampus/Dataset/Scena2.mp4'
-    # image_path = '/mnt/d/UGM/EDU/SamsungInnovationCampus/Dataset/Stream.mp4'
-    # image_path = 'http://192.168.122.82:81/stream'
+    image_path = '/mnt/d/UGM/EDU/SamsungInnovationCampus/Dataset/Scena2.mp4'
+    image_path = 'http://192.168.122.82:81/stream'
+    image_path = '/mnt/d/UGM/EDU/SamsungInnovationCampus/Dataset/Stream.mp4'
+
 
     safeZoneModel : SafezoneModel = SafezoneModel()
     poseModel : PoseModel = PoseModel()
