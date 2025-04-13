@@ -2,8 +2,8 @@ import logging
 from datetime import datetime
 from fastapi import FastAPI
 
-from configs import ENV
-from app.fastapi.api import API_ROUTER 
+from .configs import ENV
+from app.fastapi import API_ROUTER 
 
 month, year = datetime.now().month, datetime.now().year
 

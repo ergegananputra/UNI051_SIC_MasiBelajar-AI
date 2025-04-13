@@ -1,5 +1,5 @@
-from api import API_ROUTER
-from configs import ENV
+from .api import API_ROUTER
+from .configs import ENV
 
 __all__ = [
     "API_ROUTER",
