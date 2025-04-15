@@ -1,6 +1,6 @@
+opencv-python-headless
 ultralytics
 streamlit
-opencv-python-headless
 numpy
 fastapi[standard]
 pydantic-settings
