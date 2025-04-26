@@ -3,6 +3,7 @@ import os
 from weakref import ref
 import cv2
 import numpy as np
+import torch
 from ultralytics import YOLO
 from app.models import SafezoneModel
 from app.models.key_points.pose_model import PoseModel
@@ -169,8 +170,10 @@ if __name__ == '__main__':
     # image_path = '/mnt/d/UGM/EDU/SamsungInnovationCampus/Dataset/Scena1.mp4'
     # image_path = '/mnt/d/UGM/EDU/SamsungInnovationCampus/Dataset/Scena2.mp4'
     # image_path = 'http://192.168.122.82:81/stream'
-    image_path = '/mnt/d/UGM/EDU/SamsungInnovationCampus/Dataset/Stream.mp4'
+    # image_path = '/mnt/d/UGM/EDU/SamsungInnovationCampus/Dataset/Stream.mp4'
+    image_path = 'storages/sample/Stream.mp4'
 
+    print(torch.cuda.is_available())
 
     safeZoneModel : SafezoneModel = SafezoneModel()
     poseModel : PoseModel = PoseModel()
@@ -181,7 +184,7 @@ if __name__ == '__main__':
     # test_analyze_pose_video(poseModel, image_path)
 
 
-    test_masibelajar_model(image_path, safezone, True)
+    test_masibelajar_model(image_path, safezone, save=False)
     # test_masibelajar_model_2(image_path, safezone)
 
     # test_tracking(image_path)

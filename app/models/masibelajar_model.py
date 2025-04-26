@@ -4,6 +4,7 @@ import cv2
 import numpy as np
 import requests
 from shapely import Polygon
+import torch
 from ultralytics import YOLO
 from pathlib import Path
 from typing import List, Union
@@ -25,8 +26,12 @@ class MasiBelajarModel:
         self.pose_weight = pose_weight
         self.tracker_config = tracker
 
-        self.od_model = YOLO(self.od_weight)
-        self.pose_model = YOLO(self.pose_weight)
+        if torch.cuda.is_available():
+            self.od_model = YOLO(self.od_weight).to("cuda")
+            self.pose_model = YOLO(self.pose_weight).to("cuda")
+        else:
+            self.od_model = YOLO(self.od_weight)
+            self.pose_model = YOLO(self.pose_weight)
 
         self.__load_icons()
         self.__setup_tracker()
@@ -68,13 +73,13 @@ class MasiBelajarModel:
             _type_: A tuple containing a dictionary with the results and the frame with overlays if preview is True.
         """
 
-        safezone_points = np.array(safezone_points)
+        safezone_points : np.ndarray = np.array(safezone_points)
 
         payloads = None 
         _payloads = None
 
         for od_result in self.od_model.track(
-                inference_path, 
+                inference_path, # type: ignore
                 stream=stream, 
                 verbose=verbose,
                 persist=True,

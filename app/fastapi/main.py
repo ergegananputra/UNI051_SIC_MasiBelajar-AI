@@ -1,9 +1,13 @@
+import os
 import logging
 from datetime import datetime
 from fastapi import FastAPI
 
 from .configs import ENV
 from app.fastapi import API_ROUTER 
+
+os.makedirs("storages", exist_ok=True)
+os.makedirs("storages/logs", exist_ok=True)
 
 month, year = datetime.now().month, datetime.now().year
 
@@ -14,6 +18,9 @@ logging.basicConfig(
 )
 
 logger = logging.getLogger(__name__)
+
+# Create directories if they do not exist
+
 
 
 app = FastAPI(

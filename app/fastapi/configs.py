@@ -9,8 +9,6 @@ class ConfigEnv(BaseSettings):
     AI_MODEL_OBJECTS_DETECTION_WEIGHT_PATH: str
     AI_MODEL_TRACKER_PATH: str
 
-    IOT_CAMERA_URL: str
-
     model_config = SettingsConfigDict(
         case_sensitive=True,
         env_file='.env'
