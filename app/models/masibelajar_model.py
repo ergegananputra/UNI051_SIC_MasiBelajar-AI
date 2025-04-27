@@ -26,12 +26,8 @@ class MasiBelajarModel:
         self.pose_weight = pose_weight
         self.tracker_config = tracker
 
-        if torch.cuda.is_available():
-            self.od_model = YOLO(self.od_weight).to("cuda")
-            self.pose_model = YOLO(self.pose_weight).to("cuda")
-        else:
-            self.od_model = YOLO(self.od_weight)
-            self.pose_model = YOLO(self.pose_weight)
+        self.od_model = YOLO(self.od_weight)
+        self.pose_model = YOLO(self.pose_weight)
 
         self.__load_icons()
         self.__setup_tracker()
@@ -73,6 +69,19 @@ class MasiBelajarModel:
             _type_: A tuple containing a dictionary with the results and the frame with overlays if preview is True.
         """
 
+        def push_to_ubidots(payloads: dict):
+            payloads["timestamp"] = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
+            __count = payloads["counts"]
+            del payloads["counts"]
+            payloads["count_toddler"] = __count["toddler"]
+            payloads["count_adult"] = __count["non-toddler"]
+            payloads["inside"] = __count["inside"]
+            del __count
+
+
+            self.executor.submit(self.__push_to_ubidots, payloads)
+            return payloads
+
         safezone_points : np.ndarray = np.array(safezone_points)
 
         payloads = None 
@@ -86,6 +95,13 @@ class MasiBelajarModel:
                 conf=0.65, 
                 tracker='app/models/tracker/tracker.yaml'
                 ):
+            
+            # if od_result.boxes is None:
+                
+            #     if preview:
+            #         yield {}, od_result.orig_img
+            #     continue
+
             # Object detection results
             bboxes = od_result.boxes.xyxy.cpu().numpy()
             confidences = od_result.boxes.conf.cpu().numpy()
@@ -103,6 +119,12 @@ class MasiBelajarModel:
 
             # Run pose estimation on the full frame
             pose_result = self.pose_model.predict(od_result.orig_img, verbose=verbose)[0]
+
+            # if pose_result.keypoints is None:
+            #     if preview:
+            #         yield {}, od_result.orig_img
+            #     continue
+
             keypoints_results = pose_result.keypoints.data.cpu().numpy()
 
             # Match keypoints to bounding boxes
@@ -219,19 +241,8 @@ class MasiBelajarModel:
             }, frame)
 
             if payloads != _payloads and push_ubidots:
-                payloads = _payloads
-
-                payloads["timestamp"] = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
-                __count = payloads["counts"]
-                del payloads["counts"]
-                payloads["count_toddler"] = __count["toddler"]
-                payloads["count_adult"] = __count["non-toddler"]
-                payloads["inside"] = __count["inside"]
-                del __count
-
-
-                self.executor.submit(self.__push_to_ubidots, payloads)
-                payloads = _payloads
+                payloads = push_to_ubidots(_payloads)
+          
 
     def __push_to_ubidots(self, payloads: dict):
         url = "http://industrial.api.ubidots.com/api/v1.6/devices/" + DEVICE_ID

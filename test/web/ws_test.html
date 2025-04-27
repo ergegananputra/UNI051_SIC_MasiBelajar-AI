@@ -1,0 +1,106 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Streaming Test</title>
+</head>
+<body>
+    <h1>WebSocket Testing</h1>
+    <img id="video" src="https://fastapi.tiangolo.com/img/logo-margin/logo-teal.png" alt="Streaming"/>
+    <pre id="results"></pre> <!-- To display the results -->
+    <pre id="error"></pre> <!-- To display errors if any -->
+
+    <!-- Buttons to send new configurations -->
+    <button onclick="sendConfig1()">Send Config 1</button>
+    <button onclick="sendConfig2()">Send Config 2</button>
+</body>
+
+<script>
+    const ws = new WebSocket("ws://127.0.0.1:8000/v1/main-con");
+
+    ws.onopen = () => {
+        console.log("WebSocket connection established");
+
+        // Send an initial configuration
+        // const initialConfig = {
+        //     id: "stream_3",
+        //     points: [[0, 0],[0, 2],[2, 2], [2, 0]],
+        //     url: "test/data/Fall.mp4",
+        //     time_threshold: 30,
+        //     preview: true,
+        //     track: true
+        // };
+        const initialConfig = {
+            id: "stream_1",
+            points: [[696, 210], [1200, 130], [1166, 716], [1009, 718], [705, 567]],
+            url: "storages/sample/Stream.mp4",
+            time_threshold: 120,
+            preview: true,
+            track: true
+        };
+        ws.send(JSON.stringify(initialConfig));
+    };
+
+    ws.onmessage = (event) => {
+        try {
+            // Parse the incoming JSON data
+            const data = JSON.parse(event.data);
+
+            // Handle the frame (if available)
+            if (data.data && data.data.frame) {
+                const img = new Image();
+                img.src = "data:image/jpeg;base64," + data.data.frame;
+                document.getElementById("video").src = img.src;
+            }
+
+            // Handle the results (if available)
+            if (data.data && data.data.results) {
+                document.getElementById("results").textContent = JSON.stringify(data.data.results, null, 2);
+            }
+
+            // Handle errors (if any)
+            if (data.error) {
+                console.error("Server error:", data.error);
+            }
+        } catch (error) {
+            console.error("Error parsing WebSocket message:", error);
+        }
+    };
+
+    ws.onclose = () => {
+        console.log("WebSocket closed");
+    };
+
+    ws.onerror = (error) => {
+        console.error("WebSocket error:", error);
+    };
+
+    // Function to send a new configuration (Config 1)
+    function sendConfig1() {
+        const config = {
+            id: "stream_1",
+            points: [[696, 210], [1200, 130], [1166, 716], [1009, 718], [705, 567]],
+            url: "storages/sample/Stream.mp4",
+            time_threshold: 120,
+            preview: true,
+            track: true
+        };
+        ws.send(JSON.stringify(config));
+        console.log("Sent Config 1:", config);
+    }
+
+    // Function to send another configuration (Config 2)
+    function sendConfig2() {
+        const config = {
+            id: "stream_3",
+            points: [[0, 0],[0, 2],[2, 2], [2, 0]],
+            url: "test/data/Fall.mp4",
+            time_threshold: 30,
+            preview: true,
+            track: true
+        };
+        ws.send(JSON.stringify(config));
+        console.log("Sent Config 2:", config);
+    }
+</script>
+
+</html>

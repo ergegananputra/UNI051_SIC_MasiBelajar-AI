@@ -2,6 +2,7 @@ from collections import defaultdict
 import os
 from weakref import ref
 import cv2
+from fastapi.background import P
 import numpy as np
 import torch
 from ultralytics import YOLO
@@ -37,10 +38,24 @@ def test_analyze_pose_video(model : PoseModel, image_path: str):
 
 @show_func_name
 def test_masibelajar_model(image_path: str, safezone: list, save: bool = False):
+    # model = MasiBelajarModel(
+    #     od_weight='app/models/object_detection/config/best.pt',
+    #     pose_weight='app/models/key_points/config/yolo11m-pose.pt',
+    #     tracker='app/models/tracker/tracker.yaml',
+    # )
+
+    from app.fastapi.configs import ENV
+
+    od_weight = ENV.AI_MODEL_OBJECTS_DETECTION_WEIGHT_PATH
+    pose_weight = ENV.AI_MODEL_KEYPOINTS_WEIGHT_PATH
+    tracker = ENV.AI_MODEL_TRACKER_PATH
+
+    print(f"od_weight: {od_weight},\npose_weight: {pose_weight},\ntracker: {tracker}")
+
     model = MasiBelajarModel(
-        od_weight='app/models/object_detection/config/best.pt',
-        pose_weight='app/models/key_points/config/yolo11m-pose.pt',
-        tracker='app/models/tracker/tracker.yaml',
+        od_weight=od_weight,
+        pose_weight=pose_weight,
+        tracker=tracker,
     )
 
     if save:
@@ -57,10 +72,12 @@ def test_masibelajar_model(image_path: str, safezone: list, save: bool = False):
         stream=True,
         verbose=False,
         track=True,
-        time_threshold=5
+        time_threshold=60
         ):
 
+        
         cv2.imshow("Frame", frame)
+        # print(summary)
 
         if save:
             _counter += 1
@@ -107,7 +124,7 @@ def test_masibelajar_model_2(image_path: str, safezone: list):
             safezone_points=safezone,
             stream=True,
             verbose=False,
-            track=True,
+            track=False,
             ):
 
             cv2.imshow("Frame", frame)
@@ -158,22 +175,22 @@ def test_tracking(img: str):
             break
 
 if __name__ == '__main__':
+    safezone = [[0, 0],[0, 2],[2, 2], [2, 0]] # Fall
     # safezone = [[277, 142],[299, 149],[454, 140],[449, 219],[301, 244],[277, 225]]
     # safezone = [[442,30], [496, 33], [488,201], [437, 205]]
     # safezone = [[319, 49], [478, 114], [479, 328], [328, 407]] # Scena 1
     # safezone = [[559, 138], [686, 172], [650, 508], [521, 534]] # Scena 2
-    safezone = [[696, 210], [1200, 130], [1166, 716], [1009, 718], [705, 567]] # Scena 3
+    # safezone = [[696, 210], [1200, 130], [1166, 716], [1009, 718], [705, 567]] # Scena 3
 
-    # image_path = 'test/data/Fall.mp4'
+    image_path = 'test/data/Fall.mp4'
     # image_path = 'test/data/TikTokToddler.mp4'
     # image_path = 'https://www.youtube.com/live/yNKvkPJl-tg?feature=shared'
     # image_path = '/mnt/d/UGM/EDU/SamsungInnovationCampus/Dataset/Scena1.mp4'
     # image_path = '/mnt/d/UGM/EDU/SamsungInnovationCampus/Dataset/Scena2.mp4'
     # image_path = 'http://192.168.122.82:81/stream'
     # image_path = '/mnt/d/UGM/EDU/SamsungInnovationCampus/Dataset/Stream.mp4'
-    image_path = 'storages/sample/Stream.mp4'
+    # image_path = 'storages/sample/Stream.mp4'
 
-    print(torch.cuda.is_available())
 
     safeZoneModel : SafezoneModel = SafezoneModel()
     poseModel : PoseModel = PoseModel()
