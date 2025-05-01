@@ -9,7 +9,6 @@ from fastapi import APIRouter, BackgroundTasks, File, UploadFile, WebSocket, Web
 from fastapi.responses import StreamingResponse
 from idna import encode
 from pydantic import BaseModel
-import websockets
 from app.models.masibelajar_model import MasiBelajarModel
 from .configs import ENV
 
