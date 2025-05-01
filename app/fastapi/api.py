@@ -9,6 +9,7 @@ from fastapi import APIRouter, BackgroundTasks, File, UploadFile, WebSocket, Web
 from fastapi.responses import StreamingResponse
 from idna import encode
 from pydantic import BaseModel
+from app.fastapi.stream_manager import StreamManager
 from app.models.masibelajar_model import MasiBelajarModel
 from .configs import ENV
 
@@ -23,6 +24,8 @@ def get_model() -> MasiBelajarModel:
     )
 
 model = get_model()
+
+stream_manager = StreamManager()
 
 
 @API_ROUTER.get("")
@@ -100,7 +103,6 @@ async def ws_main_con(websocket: WebSocket):
 
     async def run_prediction_task(config: dict):
         try:
-
             # Validate the configuration
             if not config.get("url"):
                 raise ValueError("Missing 'url' in configuration")
@@ -110,47 +112,61 @@ async def ws_main_con(websocket: WebSocket):
                 raise ValueError("'points' must be a list of coordinates")
             if not config.get("id"):
                 raise ValueError("Missing 'id' in configuration")
-            
+
             if config["reset_prediction_task"] == True:
                 global model
                 model = get_model()
 
-            for results, frame in model.analyze_frame(
-                inference_path=config["url"],
-                safezone_points=config["points"],
-                time_threshold=config["time_threshold"],
-                id=config["id"],
-                preview=config["preview"],
-                stream=True,
-                track=config["track"],
-                verbose=False,
-            ):
-                await asyncio.sleep(0)
+            # Start the stream and get the frame queue
+            frame_queue = await stream_manager.start_stream(config["url"])
+            client_queue = asyncio.Queue()
+            stream_manager.streams[config["url"]]["clients"].add(client_queue)
 
-                json_data = {
-                    "message": "Prediction task running",
-                    "data" : {
-                        "results": results,
-                        "frame": None
-                    }
-                }
+            try:
+                while True:
+                    # Get the next frame from the queue
+                    frame = await client_queue.get()
 
-                if frame is not None:
-                    _, buffer = cv2.imencode('.jpeg', frame)
-                    frame_data = base64.b64encode(buffer).decode('utf-8')
-                    json_data["data"]["frame"] = frame_data
+                    # Process the frame with YOLO
+                    for results, processed_frame in model.analyze_frame(
+                        inference_path=config["url"],
+                        safezone_points=config["points"],
+                        time_threshold=config["time_threshold"],
+                        id=config["id"],
+                        preview=config["preview"],
+                        stream=True,
+                        track=config["track"],
+                        verbose=False,
+                    ):
+                        json_data = {
+                            "message": "Prediction task running",
+                            "data": {
+                                "results": results,
+                                "frame": None
+                            }
+                        }
 
-                await websocket.send_text(json.dumps(json_data))
+                        if processed_frame is not None:
+                            _, buffer = cv2.imencode('.jpeg', processed_frame)
+                            frame_data = base64.b64encode(buffer).decode('utf-8')
+                            json_data["data"]["frame"] = frame_data
+
+                        await websocket.send_text(json.dumps(json_data))
+
+            except WebSocketDisconnect:
+                logger.info(f"WebSocket disconnected for camera: {config['url']}")
+            finally:
+                # Remove the client and stop the stream if no clients are left
+                stream_manager.streams[config["url"]]["clients"].remove(client_queue)
+                await stream_manager.stop_stream(config["url"])
 
         except ValueError as ve:
             logger.error(f"Configuration error: {ve}")
             await websocket.send_text(json.dumps({"error": str(ve)}))
-        except WebSocketDisconnect:
-            logger.info("WebSocket disconnected")
         except asyncio.CancelledError:
             logger.info("Prediction task was canceled")
-        # except Exception as e:
-        #     logger.error(f"Error during prediction task: {e}")
+        except Exception as e:
+            logger.error(f"Error during prediction task: {e}")
 
     try:
         while True:
@@ -177,7 +193,6 @@ async def ws_main_con(websocket: WebSocket):
             except Exception as e:
                 logger.error(f"Error processing data: {e}")
                 await websocket.send_text(json.dumps({"error": str(e)}))
-                    
 
     except WebSocketDisconnect:
         logger.info("WebSocket disconnected")

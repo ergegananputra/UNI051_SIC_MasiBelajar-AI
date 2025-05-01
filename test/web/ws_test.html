@@ -12,10 +12,14 @@
     <!-- Buttons to send new configurations -->
     <button onclick="sendConfig1()">Send Config 1</button>
     <button onclick="sendConfig2()">Send Config 2</button>
+    <button onclick="sendConfig3()">Send Config 3</button>
+    <button onclick="sendConfig4()">Send Config 4</button>
 </body>
 
 <script>
-    const ws = new WebSocket("ws://127.0.0.1:8000/v1/main-con");
+    // host = "ws://127.0.0.1:8000"
+    host = "ws://10.33.35.199:8000"
+    const ws = new WebSocket(`${host}/v1/main-con`);
 
     ws.onopen = () => {
         console.log("WebSocket connection established");
@@ -94,6 +98,31 @@
             id: "stream_3",
             points: [[0, 0],[0, 2],[2, 2], [2, 0]],
             url: "test/data/Fall.mp4",
+            time_threshold: 30,
+            preview: true,
+            track: true
+        };
+        ws.send(JSON.stringify(config));
+        console.log("Sent Config 2:", config);
+    }
+
+    function sendConfig3() {
+        const config = {
+            id: "stream_4",
+            points: [[0, 0],[0, 2],[2, 2], [2, 0]],
+            url: "http://192.168.137.209:81/stream",
+            time_threshold: 30,
+            preview: true,
+            track: true
+        };
+        ws.send(JSON.stringify(config));
+        console.log("Sent Config 2:", config);
+    }
+    function sendConfig4() {
+        const config = {
+            id: "stream_5",
+            points: [[0, 0],[0, 2],[2, 2], [2, 0]],
+            url: "srt://10.33.199.17:8888?mode=listener",
             time_threshold: 30,
             preview: true,
             track: true
