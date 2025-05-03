@@ -205,6 +205,7 @@ class MasiBelajarModel:
                 "id" : id,
                 "longest_inside": 0,
                 "is_there_something_wrong": False,
+                "people_inside": 0,
             }
 
             for label in target_class:
@@ -214,6 +215,7 @@ class MasiBelajarModel:
             if track:
                 # count self.tracker_history that still inside
                 label_counts["inside"] = sum(1 for track_data in self.tracker_history.values() if track_data["inside"])
+                __temp_payload["people_inside"] = label_counts["inside"]
 
                 # Get the person that have oldest last_seen_inside and still inside
                 person_inside_tracks =  {key: value for key, value in self.tracker_history.items() if value["inside"] }
