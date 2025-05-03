@@ -202,7 +202,9 @@ class MasiBelajarModel:
             oldest_person = None
             label_counts = {}
             __temp_payload = {
-                "id" : id
+                "id" : id,
+                "longest_inside": 0,
+                "is_there_something_wrong": False,
             }
 
             for label in target_class:
