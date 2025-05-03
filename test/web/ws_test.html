@@ -14,6 +14,7 @@
     <button onclick="sendConfig2()">Send Config 2</button>
     <button onclick="sendConfig3()">Send Config 3</button>
     <button onclick="sendConfig4()">Send Config 4</button>
+    <button onclick="sendConfig5()">Send Config 5</button>
 </body>
 
 <script>
@@ -123,6 +124,18 @@
             id: "stream_5",
             points: [[0, 0],[0, 2],[2, 2], [2, 0]],
             url: "srt://10.33.199.17:8888?mode=listener",
+            time_threshold: 30,
+            preview: true,
+            track: true
+        };
+        ws.send(JSON.stringify(config));
+        console.log("Sent Config 2:", config);
+    }
+    function sendConfig5() {
+        const config = {
+            id: "stream_6",
+            points: [[787, 955], [384,1047], [365, 65], [787, 49]],
+            url: "test/data/Stream2.mp4",
             time_threshold: 30,
             preview: true,
             track: true

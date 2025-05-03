@@ -182,6 +182,14 @@ if __name__ == '__main__':
     # safezone = [[559, 138], [686, 172], [650, 508], [521, 534]] # Scena 2
     # safezone = [[696, 210], [1200, 130], [1166, 716], [1009, 718], [705, 567]] # Scena 3
     safezone = [[787, 955], [384,1047], [365, 65], [787, 49]] # Stream 2
+    '''
+    points = listOf(
+        listOf(787, 955), 
+        listOf(384,1047), 
+        listOf(365, 65), 
+        listOf(787, 49)
+    )
+    '''
 
 
     # image_path = 'test/data/Fall.mp4'
