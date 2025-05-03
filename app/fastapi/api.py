@@ -55,15 +55,19 @@ async def stream_video_via_websocket(websocket: WebSocket, video_path: str):
             track=True,
             verbose=False,
         ):
+            
             json_data = {
-                "results": results,
-                "frame": None  # Optionally include frame data if needed
+                "message": "Prediction task running",
+                "data": {
+                    "results": results,
+                    "frame": None
+                }
             }
 
             if frame is not None:
                 _, buffer = cv2.imencode('.jpeg', frame)
                 frame_data = base64.b64encode(buffer).decode('utf-8')
-                json_data["frame"] = frame_data
+                json_data["data"]["frame"] = frame_data
 
             await websocket.send_text(json.dumps(json_data))
 
