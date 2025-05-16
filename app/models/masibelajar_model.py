@@ -215,6 +215,8 @@ class MasiBelajarModel:
             if track:
                 # count self.tracker_history that still inside
                 label_counts["inside"] = sum(1 for track_data in self.tracker_history.values() if track_data["inside"])
+
+                # get total of people inside
                 __temp_payload["people_inside"] = label_counts["inside"]
 
                 # Get the person that have oldest last_seen_inside and still inside
@@ -224,7 +226,7 @@ class MasiBelajarModel:
                     oldest_person = self.tracker_history[oldest_person]["last_seen_inside"] if oldest_person is not None else None
 
                     # Current time - oldest_person
-                    oldest_person = (datetime.now() - oldest_person).total_seconds() if oldest_person is not None else None
+                    oldest_person = int((datetime.now() - oldest_person).total_seconds()) if oldest_person is not None else None
 
                     __temp_payload = {
                         "longest_inside": oldest_person,
@@ -241,6 +243,8 @@ class MasiBelajarModel:
 
             yield ({
                 "timestamp": datetime.now().strftime("%Y-%m-%d %H:%M:%S"),
+                "frame_height": od_result.orig_img.shape[0],
+                "frame_width": od_result.orig_img.shape[1],
                 **_payloads,
             }, frame)
 

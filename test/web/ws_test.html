@@ -15,11 +15,12 @@
     <button onclick="sendConfig3()">Send Config 3</button>
     <button onclick="sendConfig4()">Send Config 4</button>
     <button onclick="sendConfig5()">Send Config 5</button>
+    <button onclick="sendConfig6()">Send Config 6</button>
 </body>
 
 <script>
-    // host = "ws://127.0.0.1:8000"
-    host = "ws://10.33.35.199:8000"
+    host = "ws://127.0.0.1:8000"
+    // host = "ws://10.33.35.199:8000"
     const ws = new WebSocket(`${host}/v1/main-con`);
 
     ws.onopen = () => {
@@ -81,6 +82,8 @@
 
     // Function to send a new configuration (Config 1)
     function sendConfig1() {
+        ws.close();
+        ws = new WebSocket(`${host}/v1/main-con`);
         const config = {
             id: "stream_1",
             points: [[696, 210], [1200, 130], [1166, 716], [1009, 718], [705, 567]],
@@ -95,6 +98,8 @@
 
     // Function to send another configuration (Config 2)
     function sendConfig2() {
+        ws.close();
+        ws = new WebSocket(`${host}/v1/main-con`);
         const config = {
             id: "stream_3",
             points: [[0, 0],[0, 2],[2, 2], [2, 0]],
@@ -108,6 +113,8 @@
     }
 
     function sendConfig3() {
+        ws.close();
+        ws = new WebSocket(`${host}/v1/main-con`);
         const config = {
             id: "stream_4",
             points: [[0, 0],[0, 2],[2, 2], [2, 0]],
@@ -120,6 +127,8 @@
         console.log("Sent Config 2:", config);
     }
     function sendConfig4() {
+        ws.close();
+        ws = new WebSocket(`${host}/v1/main-con`);
         const config = {
             id: "stream_5",
             points: [[0, 0],[0, 2],[2, 2], [2, 0]],
@@ -132,10 +141,26 @@
         console.log("Sent Config 2:", config);
     }
     function sendConfig5() {
+        ws.close();
+        ws = new WebSocket(`${host}/v1/main-con`);
         const config = {
             id: "stream_6",
             points: [[787, 955], [384,1047], [365, 65], [787, 49]],
             url: "test/data/Stream2.mp4",
+            time_threshold: 30,
+            preview: true,
+            track: true
+        };
+        ws.send(JSON.stringify(config));
+        console.log("Sent Config 2:", config);
+    }
+    function sendConfig6() {
+        ws.close();
+        ws = new WebSocket(`${host}/v1/main-con`);
+        const config = {
+            id: "stream_6",
+            points: [[319, 49], [478, 114], [479, 328], [328, 407]],
+            url: '/mnt/d/UGM/EDU/SamsungInnovationCampus/Dataset/StreamInOut2.mp4',
             time_threshold: 30,
             preview: true,
             track: true
