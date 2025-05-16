@@ -37,7 +37,7 @@ def test_analyze_pose_video(model : PoseModel, image_path: str):
     model.analyze_video(image_path)
 
 @show_func_name
-def test_masibelajar_model(image_path: str, safezone: list, save: bool = False):
+def test_masibelajar_model(image_path: str, safezone: list, save: bool = False, output_dir: str = "storages/output"):
     # model = MasiBelajarModel(
     #     od_weight='app/models/object_detection/config/best.pt',
     #     pose_weight='app/models/key_points/config/yolo11m-pose.pt',
@@ -59,7 +59,6 @@ def test_masibelajar_model(image_path: str, safezone: list, save: bool = False):
     )
 
     if save:
-        output_dir = "storages/output"
         if not os.path.exists(output_dir):
             os.makedirs(output_dir)
         output_path = os.path.join(output_dir, os.path.basename(image_path))
@@ -181,7 +180,8 @@ if __name__ == '__main__':
     # safezone = [[319, 49], [478, 114], [479, 328], [328, 407]] # Scena 1
     # safezone = [[559, 138], [686, 172], [650, 508], [521, 534]] # Scena 2
     # safezone = [[696, 210], [1200, 130], [1166, 716], [1009, 718], [705, 567]] # Scena 3
-    safezone = [[787, 955], [384,1047], [365, 65], [787, 49]] # Stream 2
+    # safezone = [[787, 955], [384,1047], [365, 65], [787, 49]] # Stream 2
+    safezone = [[691,270], [1078,361], [1078, 767], [692, 972]] # Stream In Out 2
     '''
     points = listOf(
         listOf(787, 955), 
@@ -201,7 +201,8 @@ if __name__ == '__main__':
     # image_path = '/mnt/d/UGM/EDU/SamsungInnovationCampus/Dataset/Stream.mp4'
     # image_path = 'storages/sample/Stream.mp4'
     # image_path = '/mnt/d/UGM/EDU/SamsungInnovationCampus/Dataset/Stream2.mp4'
-    image_path = 'storages/sample/Stream2.mp4'
+    # image_path = 'storages/sample/Stream2.mp4'
+    image_path = '/mnt/d/UGM/EDU/SamsungInnovationCampus/Dataset/StreamInOut2.mp4'
 
 
     safeZoneModel : SafezoneModel = SafezoneModel()
@@ -213,7 +214,7 @@ if __name__ == '__main__':
     # test_analyze_pose_video(poseModel, image_path)
 
 
-    test_masibelajar_model(image_path, safezone, save=False)
+    test_masibelajar_model(image_path, safezone, save=True)
     # test_masibelajar_model_2(image_path, safezone)
 
     # test_tracking(image_path)
